@@ -6,7 +6,7 @@
 	 <?php
 		$variable = 0
 		if (variable == 27)
-			echo "How did this happen?";
+			echo "How did this will not happen?";
 		else
 			echo "It worked!";
 	 
