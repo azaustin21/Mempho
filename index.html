@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<style>
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+		}
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #header{
+		height: 5%;
+		width: 70%;  
+	  }  
+	  #map {
+        height: 75%;
+        width: 70%;
+        float: left;
+        margin: 2%;
+      }
+      #title-text{
+		  text-align: center;
+		  color: #dddddd;
+	  }
+	  #floating-panel {
+        position: absolute;
+        top: 100px;
+        left: 15%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+	   #footer{
+		float: left;  
+	  }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        background: #172697;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+	<div id="header"><h1 id="title-text"></h1></div></div>
+    <div id="map"></div>
+    <div id="footer">
+		<button onclick="toggleCrimeData()">Toggle crime data</button>
+		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
+	</div>
+	<div id="floating-panel">
+		<input onclick="clearMarkers();" type=button value="Hide Markers">
+      	<input onclick="showMarkers();" type=button value="Show All Markers">
+      	<input onclick="deleteMarkers();" type=button value="Delete Markers">
+	</div>
+    <script>
+    	var map;
+      var markers = [];
+
+      function initMap() {
+        var memphis = {lat: 35.139784, lng: -89.991499};
+
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: memphis,
+          mapTypeId: 'terrain'
+        });
+
+        // This event listener will call addMarker() when the map is clicked.
+        map.addListener('click', function(event) {
+          addMarker(event.latLng);
+        });
+      }
+
+      // Adds a marker to the map and push to the array.
+      function addMarker(location) {
+        var marker = new google.maps.Marker({
+          position: location,
+          map: map
+        });
+        markers.push(marker);
+      }
+
+      // Sets the map on all markers in the array.
+      function setMapOnAll(map) {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+        }
+      }
+
+      // Removes the markers from the map, but keeps them in the array.
+      function clearMarkers() {
+        setMapOnAll(null);
+      }
+
+      // Shows any markers currently in the array.
+      function showMarkers() {
+        setMapOnAll(map);
+      }
+
+      // Deletes all markers in the array by removing references to them.
+      function deleteMarkers() {
+        clearMarkers();
+        markers = [];
+      }
+// Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
+		</script>
+    <script async defer 
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
