@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<style>
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+		}
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #header{
+		height: 5%;
+		width: 70%;  
+	  }  
+	  #map {
+        height: 75%;
+        width: 70%;
+        float: left;
+        margin: 2%;
+        
+      }
+      #info {
+		height: 75%;
+		width: 20%;
+	    float: left;
+	       
+	    
+	    
+	  }
+	  #title-text{
+		  text-align: center;
+		  color: #dddddd;
+	  }
+	  #info-text {
+		
+		color: #dddddd;
+		padding-left: 1em;
+	  
+	  }
+	  #help-text{
+		color: #dddddd;
+		padding-top: 15%;
+		padding-left: 1em;
+	  }
+	  
+	  #footer{
+		float: left;  
+	  }
+	  
+	  .crime_info{
+		 font-size: .8em;
+		 
+	  }
+	  
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        background: #172697;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+	<div id="header"><h1 id="title-text"></h1></div></div>
+    <div id="map"></div>
+    <div id="info">
+		<div id="help-text"><h2></h2></div>
+		<div id="info-text"></div>
+		
+    </div>
+    <div id="footer">
+	</div>
+    <script>
+	 
+	 
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: new google.maps.LatLng(35.139784,-89.991499),
+          mapTypeId: 'roadmap'
+        });    
+    }
+
+		</script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
