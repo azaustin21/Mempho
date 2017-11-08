@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
 	<style>
 		body {
 			font-family: Arial, Helvetica, sans-serif;
 		}
       /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
+      * element that contains the map. */
       #header{
-		height: 5%;
-		width: 70%;  
-	  }  
-	  #map {
+        height: 5%;
+        width: 70%;  
+      }  
+      #map {
         height: 75%;
         width: 70%;
         float: left;
         margin: 2%;
       }
       #title-text{
-		  text-align: center;
-		  color: #dddddd;
-	  }
-	  #floating-panel {
+        text-align: center;
+        color: #dddddd;
+      }
+      #floating-panel {
         position: absolute;
         top: 100px;
         left: 15%;
@@ -34,9 +34,9 @@
         line-height: 30px;
         padding-left: 10px;
       }
-	   #footer{
-		float: left;  
-	  }
+      #footer{
+        float: left;  
+      }
       /* Optional: Makes the sample page fill the window. */
       html, body {
         background: #172697;
@@ -47,29 +47,165 @@
     </style>
   </head>
   <body>
-	<div id="header"><h1 id="title-text"></h1></div></div>
-    <div id="map"></div>
-    <div id="footer">
-		<button onclick="toggleCrimeData()">Toggle crime data</button>
-		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
-	</div>
-	<div id="floating-panel">
-		<input onclick="clearMarkers();" type=button value="Hide Markers">
-      	<input onclick="showMarkers();" type=button value="Show All Markers">
-      	<input onclick="deleteMarkers();" type=button value="Delete Markers">
-	</div>
-    <script>
-    	var map;
-      var markers = [];
+   <div id="header"><h1 id="title-text"></h1></div></div>
+   <div id="map"></div>
+   <div id="footer">
+    <button onclick="toggleCrimeData()">Toggle crime data</button>
+    <button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
+  </div>
+  <div id="floating-panel">
+    <input onclick="clearMarkers();" type=button value="Hide Markers">
+    <input onclick="showMarkers();" type=button value="Show All Markers">
+    <input onclick="deleteMarkers();" type=button value="Delete Markers">
+    <input onclick= "clearMap();" type=button value="Reset Map">
+  </div>
+  <script>
 
-      function initMap() {
-        var memphis = {lat: 35.139784, lng: -89.991499};
+    var attachEventToResetButton;
 
-        map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 12,
-          center: memphis,
-          mapTypeId: 'terrain'
-        });
+// Attach event to the reset button
+var attachResetEvent = function(){
+  var $resetImg = $('img[src*=mapcontrols3d6.png]');
+
+    // We have to check if the image is available yet.
+    // The reason is although the map has been loaded, the navigation might
+    // take some time to load and we don't know when it will be fully loaded.
+    // There doesn't seem to have an event for "Navigation loaded" in the API
+    // So here is a way to work around
+    if ($resetImg.length > 0)
+    {
+      $resetImg.css('cursor', 'pointer').attr('title', 'Return to center').click(function(){
+        alert('Clicked on reset button');
+
+            // Put your code to reset the map here. For example:
+            //map.setMapTypeId(MAP_TYPE_ID);
+            //map.setCenter(new google.maps.LatLng(LAT, LNG));
+            //map.setZoom(ZOOM_LEVEL);
+          });
+
+      window.clearInterval(attachEventToResetButton);
+    }
+  }
+
+// Periodically checking to attach event to the reset button
+attachEventToResetButton = window.setInterval(attachResetEvent, 500);
+
+var map;
+var markers = [];
+
+function initMap() {
+  var memphis = {lat: 35.139784, lng: -89.991499};
+
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 12,
+    center: memphis,
+    mapTypeId: 'terrain',
+    streetViewControl: false
+  });
+
+  //restricts the zoom funtion of the Google Maps API
+  google.maps.event.addListener(map, 'zoom_changed', function () {
+   if (map.getZoom() < 12) map.setZoom(12);});
+
+
+      //sets the bounds of the map
+      maxBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(34.99, -90.315),
+        new google.maps.LatLng(35.265, -89.64)
+        );
+
+
+        //next few lines determines if the user has hit the boundry or not and stops the user from moving further if they have.
+        var MapBoundsLimit = function(mapInstance, maxBounds) {
+          this.mapInstance_ = mapInstance;
+          this.maxBounds_ = maxBounds;
+
+          google.maps.event.addListener(map, 'center_changed', this.limitedMapMove_.bind(this));
+          google.maps.event.addListener(map, 'zoom_changed', this.maybeUpdateMapCenter_.bind(this));
+          google.maps.event.addListener(map, 'resize', this.maybeUpdateMapCenter_.bind(this));
+        };
+
+        MapBoundsLimit.prototype.limitedMapMove_ = function() {
+          var visibleBounds = null;
+
+        if (this.ignoreNextMapMove_) {
+          this.ignoreNextMapMove_ = false;
+          return;
+        }
+
+        visibleBounds = this.mapInstance_.getBounds();
+
+        if (
+          this.maxBounds_.contains(visibleBounds.getNorthEast()) &&
+          this.maxBounds_.contains(visibleBounds.getSouthWest())
+          ) {
+          this.lastValidCenter_ = this.mapInstance_.getCenter();
+        return;
+        }
+
+        this.ignoreNextMapMove_ = true;
+
+        if (this.lastValidCenter_) {
+          this.mapInstance_.setCenter(this.lastValidCenter_);
+          return;
+        }
+
+        this.lastValidCenter_ = this.recalculateMapCenter_();
+        this.mapInstance_.setCenter(this.lastValidCenter_);
+        };
+
+        MapBoundsLimit.prototype.recalculateMapCenter_ = function() {
+          var mapCenter = this.mapInstance_.getCenter();
+          var mapBounds = this.mapInstance_.getBounds();
+          var offsets = this.getBoundsOffsets_(mapBounds, this.maxBounds_);
+          var newCenter = {
+            'lat': mapCenter.lat(),
+            'lng': mapCenter.lng()
+          };
+
+          if (offsets.n > 0) {
+            newCenter.lat = mapCenter.lat() - offsets.n;
+          }
+
+          if (offsets.e > 0) {
+            newCenter.lng = mapCenter.lng() - offsets.e;
+          }
+
+          if (offsets.s > 0) {
+            newCenter.lat = mapCenter.lat() + offsets.s;
+          }
+
+          if (offsets.w > 0) {
+            newCenter.lng = mapCenter.lng() + offsets.w;
+          }
+
+          return new google.maps.LatLng(newCenter.lat, newCenter.lng);
+        };
+
+        MapBoundsLimit.prototype.getBoundsOffsets_ = function(inner, outer) {
+          return {
+            'n': inner.getNorthEast().lat() - outer.getNorthEast().lat(),
+            'e': inner.getNorthEast().lng() - outer.getNorthEast().lng(),
+            's': outer.getSouthWest().lat() - inner.getSouthWest().lat(),
+            'w': outer.getSouthWest().lng() - inner.getSouthWest().lng()
+          };
+        };
+
+        MapBoundsLimit.prototype.maybeUpdateMapCenter_ = function() {
+          if (!this.mapInstance_.getBounds()) {
+            return;
+          }
+
+        setTimeout(function() {
+          this.lastValidCenter_ = this.recalculateMapCenter_();
+          this.mapInstance_.setCenter(this.lastValidCenter_);
+        }.bind(this), 0);
+        };
+
+        new MapBoundsLimit(map, maxBounds);
+
+
+
 
         // This event listener will call addMarker() when the map is clicked.
         map.addListener('click', function(event) {
@@ -108,10 +244,20 @@
         clearMarkers();
         markers = [];
       }
+
+      function clearMap(){
+      	deleteMarkers();
+      	map.setMapTypeId('terrain');
+      	map.setCenter(new google.maps.LatLng(35.139784, -89.991499));
+      	map.setZoom(12);
+
+      }
+
+
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
-		</script>
-    <script async defer 
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization&callback=initMap">
-    </script>
-  </body>
+</script>
+<script async defer 
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization&callback=initMap">
+</script>
+</body>
 </html>
