@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
 	<style>
 		body {
 			font-family: Arial, Helvetica, sans-serif;
@@ -11,6 +13,51 @@
 		height: 5%;
 		width: 70%;  
 	  }  
+	  #map #infowindow-content {
+        display: inline;
+      }
+
+      .pac-card {
+        margin: 10px 10px 0 0;
+        border-radius: 2px 0 0 2px;
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        outline: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        background-color: #fff;
+        font-family: Roboto;
+      }
+
+      #pac-container {
+        padding-bottom: 12px;
+        margin-right: 12px;
+      }
+
+      .pac-controls {
+        display: inline-block;
+        padding: 5px 11px;
+      }
+
+      .pac-controls label {
+        font-family: Roboto;
+        font-size: 13px;
+        font-weight: 300;
+      }
+
+      #pac-input {
+        background-color: #fff;
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+        margin-left: 12px;
+        padding: 0 11px 0 13px;
+        text-overflow: ellipsis;
+        width: 400px;
+      }
+
+      #pac-input:focus {
+        border-color: #4d90fe;
+      }
 	  #map {
         height: 75%;
         width: 70%;
@@ -21,10 +68,13 @@
 		  text-align: center;
 		  color: #dddddd;
 	  }
+	  #target {
+        width: 345px;
+      }
 	  #floating-panel {
         position: absolute;
-        top: 100px;
-        left: 15%;
+        top: 120px;
+        left: 17%;
         z-index: 5;
         background-color: #fff;
         padding: 5px;
@@ -54,6 +104,7 @@
 		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
 	</div>
 	<div id="floating-panel">
+		<input id="pac-input" class="controls" type="text" placeholder="Type Address">
 		<input onclick="clearMarkers();" type=button value="Hide Markers">
       	<input onclick="showMarkers();" type=button value="Show All Markers">
       	<input onclick="deleteMarkers();" type=button value="Delete Markers">
@@ -61,7 +112,8 @@
     <script>
     	var map;
       var markers = [];
-
+	  var input;
+	  var searchBox;
       function initMap() {
         var memphis = {lat: 35.139784, lng: -89.991499};
 
@@ -69,6 +121,52 @@
           zoom: 12,
           center: memphis,
           mapTypeId: 'terrain'
+        });
+		
+		//Creates the searchbox UI
+		input = document.getElementById('pac-input');
+        searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+		
+		//checks to see if searched area has different bounds.
+        map.addListener('bounds_changed', function() {
+          searchBox.setBounds(map.getBounds());
+        });
+
+		//Listens for when the user makes a search.
+        searchBox.addListener('places_changed', function() {
+          var places = searchBox.getPlaces();
+
+          if (places.length == 0) {
+            return;
+          }
+
+          // For each place, get the icon, name and location.
+          var bounds = new google.maps.LatLngBounds();
+          places.forEach(function(place) {
+            if (!place.geometry) {
+              console.log("Returned place contains no geometry");
+              return;
+            }
+            var icon = {
+              url: place.icon,
+              size: new google.maps.Size(71, 71),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(17, 34),
+              scaledSize: new google.maps.Size(25, 25)
+            };
+
+            //Create the marker for searched place.
+            addMarker(place.geometry.location);
+			
+			if (place.geometry.viewport) {
+              // Only geocodes have viewport.
+              bounds.union(place.geometry.viewport);
+            } else {
+              bounds.extend(place.geometry.location);
+            }
+          });
+          map.fitBounds(bounds);
         });
 
         // This event listener will call addMarker() when the map is clicked.
@@ -108,10 +206,12 @@
         clearMarkers();
         markers = [];
       }
+	  
+       
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
 		</script>
     <script async defer 
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places&callback=initMap">
     </script>
   </body>
 </html>
