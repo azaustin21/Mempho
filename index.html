@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
+  <title>HotSpotsInMemphis</title>
 	<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+  <script type="text/javascript" language="javascript" src="crime_data_clean.json"></script>
 	<style>
 		body {
 			font-family: Arial, Helvetica, sans-serif;
@@ -58,16 +61,30 @@
       #pac-input:focus {
         border-color: #4d90fe;
       }
-	  #map {
+	    #map {
         height: 75%;
         width: 70%;
         float: left;
         margin: 2%;
       }
+      #info {
+        height: 75%;
+        width: 20%;
+        float: left;
+      }
       #title-text{
 		  text-align: center;
-		  color: #dddddd;
-	  }
+		  color: #53787D;
+	    }
+      #info-text{
+        color: #53787D;
+        padding-left: 1em;
+      }
+      #help-text{
+        color: #53787D;
+        padding-top: 15%;
+        padding-left: 1em;
+      }
 	  #target {
         width: 345px;
       }
@@ -87,6 +104,9 @@
 	   #footer{
 		float: left;  
 	  }
+    .crime_info{
+      font-size: .8em;
+    }
       /* Optional: Makes the sample page fill the window. */
       html, body {
         background: #172697;
@@ -97,43 +117,174 @@
     </style>
   </head>
   <body>
-	<div id="header"><h1 id="title-text"></h1></div></div>
+	<div id="header"><h1 id="title-text">HotSpotsInMemphis</h1></div></div>
     <div id="map"></div>
+    <div id="info">
+    <div id="help-text"><h2>Select an area to view crime data</h2></div>
+    <div id="info-text"></div>
+  </div>
     <div id="footer">
 		<button onclick="toggleCrimeData()">Toggle crime data</button>
 		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
+		<input type="button" onclick="location.href='calendar.html';" value="Calendar" />
 	</div>
 	<div id="floating-panel">
 		<input id="pac-input" class="controls" type="text" placeholder="Type Address">
 		<input onclick="clearMarkers();" type=button value="Hide Markers">
       	<input onclick="showMarkers();" type=button value="Show All Markers">
       	<input onclick="deleteMarkers();" type=button value="Delete Markers">
+        <input onclick="clearMap();" type=button value="Reset Map">
 	</div>
     <script>
     	var map;
       var markers = [];
-	  var input;
-	  var searchBox;
+	    var input;
+	    var searchBox;
+      var crimeData;
+      var crimeDataShowing;
+      var crimeHeatmap;
+      var crimeHeatmapShowing;
+      var attachEventToResetButton;
+
+      var attachResetEvent = function(){
+        var $resetImg = $('img[src*=mapcontrols3d6.png]');
+
+          if ($resetImg.length > 0)
+          {
+            $resetImg.css('cursor', 'pointer').attr('title', 'Return to center').click(function(){
+              alert('Clicked on reset button');
+
+            // Put your code to reset the map here. For example:
+            //map.setMapTypeId(MAP_TYPE_ID);
+            //map.setCenter(new google.maps.LatLng(LAT, LNG));
+            //map.setZoom(ZOOM_LEVEL);
+          });
+      window.clearInterval(attachEventToResetButton);
+    }
+  }
+// Periodically checking to attach event to the reset button
+attachEventToResetButton = window.setInterval(attachResetEvent, 500);
+
       function initMap() {
         var memphis = {lat: 35.139784, lng: -89.991499};
 
         map = new google.maps.Map(document.getElementById('map'), {
           zoom: 12,
           center: memphis,
-          mapTypeId: 'terrain'
+          mapTypeId: 'terrain',
+          streetViewControl: false
         });
-		
-		//Creates the searchbox UI
-		input = document.getElementById('pac-input');
-        searchBox = new google.maps.places.SearchBox(input);
-        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
-		
-		//checks to see if searched area has different bounds.
+
+        //restricts the zoom funtion of the Google Maps API
+        google.maps.event.addListener(map, 'zoom_changed', function (){
+        if (map.getZoom() < 12) map.setZoom(12);});
+
+
+          //sets the bounds of the map
+      maxBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(34.99, -90.315),
+        new google.maps.LatLng(35.265, -89.64)
+        );
+
+
+        //next few lines determines if the user has hit the boundry or not and stops the user from moving further if they have.
+        var MapBoundsLimit = function(mapInstance, maxBounds) {
+          this.mapInstance_ = mapInstance;
+          this.maxBounds_ = maxBounds;
+
+          google.maps.event.addListener(map, 'center_changed', this.limitedMapMove_.bind(this));
+          google.maps.event.addListener(map, 'zoom_changed', this.maybeUpdateMapCenter_.bind(this));
+          google.maps.event.addListener(map, 'resize', this.maybeUpdateMapCenter_.bind(this));
+        };
+
+        MapBoundsLimit.prototype.limitedMapMove_ = function() {
+          var visibleBounds = null;
+
+        if (this.ignoreNextMapMove_) {
+          this.ignoreNextMapMove_ = false;
+          return;
+        }
+
+        visibleBounds = this.mapInstance_.getBounds();
+
+        if (
+          this.maxBounds_.contains(visibleBounds.getNorthEast()) &&
+          this.maxBounds_.contains(visibleBounds.getSouthWest())
+          ) {
+          this.lastValidCenter_ = this.mapInstance_.getCenter();
+        return;
+        }
+
+        this.ignoreNextMapMove_ = true;
+
+        if (this.lastValidCenter_) {
+          this.mapInstance_.setCenter(this.lastValidCenter_);
+          return;
+        }
+
+        this.lastValidCenter_ = this.recalculateMapCenter_();
+        this.mapInstance_.setCenter(this.lastValidCenter_);
+        };
+
+        MapBoundsLimit.prototype.recalculateMapCenter_ = function() {
+          var mapCenter = this.mapInstance_.getCenter();
+          var mapBounds = this.mapInstance_.getBounds();
+          var offsets = this.getBoundsOffsets_(mapBounds, this.maxBounds_);
+          var newCenter = {
+            'lat': mapCenter.lat(),
+            'lng': mapCenter.lng()
+          };
+
+          if (offsets.n > 0) {
+            newCenter.lat = mapCenter.lat() - offsets.n;
+          }
+
+          if (offsets.e > 0) {
+            newCenter.lng = mapCenter.lng() - offsets.e;
+          }
+
+          if (offsets.s > 0) {
+            newCenter.lat = mapCenter.lat() + offsets.s;
+          }
+
+          if (offsets.w > 0) {
+            newCenter.lng = mapCenter.lng() + offsets.w;
+          }
+
+          return new google.maps.LatLng(newCenter.lat, newCenter.lng);
+        };
+
+        MapBoundsLimit.prototype.getBoundsOffsets_ = function(inner, outer) {
+          return {
+            'n': inner.getNorthEast().lat() - outer.getNorthEast().lat(),
+            'e': inner.getNorthEast().lng() - outer.getNorthEast().lng(),
+            's': outer.getSouthWest().lat() - inner.getSouthWest().lat(),
+            'w': outer.getSouthWest().lng() - inner.getSouthWest().lng()
+          };
+        };
+
+        MapBoundsLimit.prototype.maybeUpdateMapCenter_ = function() {
+          if (!this.mapInstance_.getBounds()) {
+            return;
+          }
+
+        setTimeout(function() {
+          this.lastValidCenter_ = this.recalculateMapCenter_();
+          this.mapInstance_.setCenter(this.lastValidCenter_);
+        }.bind(this), 0);
+        };
+
+        new MapBoundsLimit(map, maxBounds);
+        
+    //Creates the searchbox UI
+        input = document.getElementById('pac-input');
+          searchBox = new google.maps.places.SearchBox(input);
+          map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+    //checks to see if searched area has different bounds
         map.addListener('bounds_changed', function() {
           searchBox.setBounds(map.getBounds());
         });
-
-		//Listens for when the user makes a search.
+    //Listens for when the user makes a search.
         searchBox.addListener('places_changed', function() {
           var places = searchBox.getPlaces();
 
@@ -141,7 +292,7 @@
             return;
           }
 
-          // For each place, get the icon, name and location.
+          //For each place, get the icon, name and location.
           var bounds = new google.maps.LatLngBounds();
           places.forEach(function(place) {
             if (!place.geometry) {
@@ -157,9 +308,8 @@
             };
 
             //Create the marker for searched place.
-            addMarker(place.geometry.location);
-			
-			if (place.geometry.viewport) {
+              addMarker(place.geometry.location);
+            if (place.geometry.viewport) {
               // Only geocodes have viewport.
               bounds.union(place.geometry.viewport);
             } else {
@@ -173,6 +323,50 @@
         map.addListener('click', function(event) {
           addMarker(event.latLng);
         });
+
+      crimeData = [];
+      crimeHeatmapShowing = false;
+      var crime_image = "default"; //needs pin image
+      var crimesHeatmapData = [];
+    /*
+    For loop goes into the crime_data_clean.json file and
+    retrieves the information, it also places it on the map according
+    to its location.
+    */
+    for(var i = 0; i < crimeDataJson.crimes.length; i++)
+    {
+      var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+      crimesHeatmapData.push(latLng);
+      var marker = new google.maps.Marker({
+        position: latLng, 
+        map: null,
+        zIndex: 1,
+        icon: crime_image,
+        date: crimeDataJson.crimes[i].date,
+        type: crimeDataJson.crimes[i].type,
+        name: crimeDataJson.crimes[i].name,
+        address: crimeDataJson.crimes[i].address,
+        title: crimeDataJson.crimes[i].date + ":" + crimeDataJson.crimes[i].type
+      });
+    }
+    // Visualizer that sets the crime locations as heat points.
+    crimeHeatmap = new google.maps.visualization.HeatmapLayer({
+      data: crimesHeatmapData,
+      dissipating: true,
+      map: null
+    });
+    }
+      // Turns the heat map on and off, used by the Toggle crime heatmap
+      function toggleCrimeHeatmap(){
+        if(crimeHeatmapShowing){
+          crimeHeatmap.setMap(null);
+          crimeHeatmapShowing = false;
+        }
+        else
+        {
+          crimeHeatmap.setMap(map);
+          crimeHeatmapShowing = true;
+        }
       }
 
       // Adds a marker to the map and push to the array.
@@ -206,10 +400,16 @@
         clearMarkers();
         markers = [];
       }
+      function clearMap(){
+        deleteMarkers();
+        map.setMapTypeId('terrain');
+        map.setCenter(new google.maps.LatLng(35.139784, -89.991499));
+        map.setZoom(12);
+      }
 	  
        
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
-		</script>
+	</script>
     <script async defer 
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places&callback=initMap">
     </script>
