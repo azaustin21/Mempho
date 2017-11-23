@@ -295,7 +295,15 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           }
 
           //For each place, get the icon, name and location.
-          var bounds = new google.maps.LatLngBounds();
+          var bounds = new google.maps.LatLngBounds(
+		   new google.maps.LatLng(34.99, -90.315),
+           new google.maps.LatLng(35.265, -89.64)
+		  );
+		  var options = {
+			bounds: bounds,
+			types: ['geocode'],
+			componentRestrictions: {country: 'us'}
+			};
           places.forEach(function(place) {
             if (!place.geometry) {
               console.log("Returned place contains no geometry");
@@ -407,6 +415,14 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           map: map
         });
         markers.push(marker);
+		//Given a distance (.25 miles), will check using for loop all crimedata points in lat/long.
+		var radius = 402;
+		for(var i = 0; i < crimeData.length; i++){
+			var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+			if (google.maps.geometry.spherical.computeDistanceBetween(location,latLng) < radius){
+				crimeData[i].setMap(map);
+			}
+		}
       }
 
       // Sets the map on all markers in the array.
@@ -426,10 +442,13 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         setMapOnAll(map);
       }
 
-      // Deletes all markers in the array by removing references to them.
+
+      // Deletes all markers in the array by removing references to them. Also hides all currently visible crime data.
       function deleteMarkers(){
         clearMarkers();
         markers = [];
+		hideCrimeData();
+		crimeDataShowing = false;
       }
       function clearMap(){
         deleteMarkers();
@@ -450,7 +469,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
 	</script>
     <script async defer 
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places,geometry&callback=initMap">
     </script>
   </body>
 </html>
