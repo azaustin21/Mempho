@@ -130,6 +130,8 @@
 		<button onclick="toggleCrimeData()">Toggle crime data</button>
 		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
 		<button onclick="seldate()"> Specify Date</button>
+		<button onclick=" window.open('calendar.html','_blank')"> Calendar</button>
+    <button onclick=" window.open('login2.php')"> Admin</button>
 	</div>
 	<div id="floating-panel">
 		<input id="pac-input" class="controls" type="text" placeholder="Type Address">
@@ -194,7 +196,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           //sets the bounds of the map
       maxBounds = new google.maps.LatLngBounds(
         new google.maps.LatLng(34.99, -90.315),
-        new google.maps.LatLng(35.265, -89.64)
+        new google.maps.LatLng(35.32, -89.64)
         );
 
 
@@ -386,11 +388,13 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
   }
       function toggleCrimeData(){
         if(crimeDataShowing){
+          deleteMarkers();
           hideCrimeData();
           crimeDataShowing = false;
         }
         else 
         {
+          deleteMarkers();
           showCrimeData();
           crimeDataShowing = true;
         }
@@ -426,6 +430,18 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           position: location,
           map: map
         });
+        //on double click it removes the marker and crime data around it.
+        google.maps.event.addListener(marker, 'dblclick', function(event) {
+           marker.setMap(null);
+           for(var i=0; i<crimeData.length; i++){
+              var range = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+              if (google.maps.geometry.spherical.computeDistanceBetween(marker.position,range) < 402){
+                crimeData[i].setMap(null);
+              }
+           }
+           });
+
+
         markers.push(marker);
 		//Given a distance (.25 miles), will check using for loop all crimedata points in lat/long.
 		var radius = 402;
@@ -459,8 +475,8 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
       function deleteMarkers(){
         clearMarkers();
         markers = [];
-		hideCrimeData();
-		crimeDataShowing = false;
+		    hideCrimeData();
+		    crimeDataShowing = false;
       }
       function clearMap(){
         deleteMarkers();
