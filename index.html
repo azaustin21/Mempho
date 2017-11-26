@@ -370,14 +370,27 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         type: crimeDataJson.crimes[i].type,
         name: crimeDataJson.crimes[i].name,
         address: crimeDataJson.crimes[i].address,
-        title: crimeDataJson.crimes[i].date + ":" + crimeDataJson.crimes[i].type
+        title: crimeDataJson.crimes[i].date + ":" + crimeDataJson.crimes[i].type,
+        clickable: true
       });
 	  
       marker.addListener('click', function() {
           $('#info-text').html("<h3>Individual Crime Details:" + '<br><br>' + this.name + "</h3><p>" + "Occured on " + this.date +" on the  " + this.address);
           });
+
+       marker.info = new google.maps.InfoWindow({
+         content: marker.name +'<br><br>'+ marker.date
+        });
+
+      google.maps.event.addListener(marker, 'dblclick', function() {
+          var marker_map = this.getMap();
+          this.info.open(marker_map,this);
+      });
+
       crimeData.push(marker);    
     }
+
+
     // Visualizer that sets the crime locations as heat points.
     crimeHeatmap = new google.maps.visualization.HeatmapLayer({
       data: crimesHeatmapData,
