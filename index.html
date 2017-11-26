@@ -6,7 +6,9 @@
     <meta charset="utf-8">
   <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
   <script type="text/javascript" language="javascript" src="crime_data_clean.json"></script>
-	
+  	   <script src="library.js"></script>
+          <link href="stylesheet.css" rel="stylesheet">
+		  
   <style>
 		body {
 			font-family: Arial, Helvetica, sans-serif;
@@ -127,6 +129,7 @@
     <div id="footer">
 		<button onclick="toggleCrimeData()">Toggle crime data</button>
 		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
+		<button onclick="seldate()"> Specify Date</button>
 		<button onclick=" window.open('calendar.html','_blank')"> Calendar</button>
     <button onclick=" window.open('login2.php')"> Admin</button>
 	</div>
@@ -136,7 +139,13 @@
       	<input onclick="showMarkers();" type=button value="Show All Markers">
       	<input onclick="deleteMarkers();" type=button value="Delete Markers">
         <input onclick="clearMap();" type=button value="Reset Map">
+		
 	</div>
+	<div class="wrapper">
+    <div id="calendarContainer"></div>
+    <div id="eventsContainer" style="margin-left: 8px;"></div>
+    </div>
+       
     <script>
     	var map;
       var markers = [];
@@ -148,7 +157,8 @@
       var crimeHeatmapShowing;
       var currentlyShowingCrimePins;
       var attachEventToResetButton;
-
+	 
+		
       var attachResetEvent = function(){
         var $resetImg = $('img[src*=mapcontrols3d6.png]');
 
@@ -341,13 +351,15 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
       var crime_image = "yellow_pin.png";
       currentlyShowingCrimePins = [];
       var crimesHeatmapData = [];
+	  
+
     /*
     For loop goes into the crime_data_clean.json file and
     retrieves the information, it also places it on the map according
     to its location.
     */
     for(var i = 0; i < crimeDataJson.crimes.length; i++)
-    {
+	{
       var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
       crimesHeatmapData.push(latLng);
       var marker = new google.maps.Marker({
@@ -361,6 +373,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         address: crimeDataJson.crimes[i].address,
         title: crimeDataJson.crimes[i].date + ":" + crimeDataJson.crimes[i].type
       });
+	  
       marker.addListener('click', function() {
           $('#info-text').html("<h3>Individual Crime Details:" + '<br><br>' + this.name + "</h3><p>" + "Occured on " + this.date +" on the  " + this.address);
           });
@@ -479,10 +492,109 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         }
         }
       }
-	  
-       
+
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
-	</script>
+			//Calendar starts here
+            calendar = new Calendar("calendarContainer", "small", [ "Sunday", "3" ], [ "#303F9F", "#3949ab", "#C5CAE9", "#FFFFFF" ]);
+            organizer = new Organizer("eventsContainer", calendar); 
+            currentDay = calendar.date.getDate(); 
+            
+            data = {
+            years: [
+                {
+                int: 2000,
+                months: [
+                    {
+                    int: 1,
+                    days: [
+                        {
+                        int: 1,
+                        events: [
+
+                        ]
+                        }
+                    ]
+                    }
+                ]
+                },
+                {
+                int: (new Date().getFullYear()),
+                months: [
+                    {
+                    int: (new Date().getMonth() + 1),
+                    days: [
+                        {
+                        int: (new Date().getDate()),
+                        events: [
+
+                        ]
+                        }
+                    ]
+                    }
+                ]
+                }
+            ]
+            };
+            showEvents(); 
+            callback = function () {
+            showEvents();
+            }
+            organizer.setOnClickListener('day-slider', callback, callback);
+            organizer.setOnClickListener('days-blocks', callback, null);
+            organizer.setOnClickListener('month-slider', callback, callback); 
+            organizer.setOnClickListener('year-slider', callback, callback); 
+    
+            function showEvents() {
+            theYear = -1, theMonth = -1, theDay = -1;
+            for (i = 0; i < data.years.length; i++) {
+                if (calendar.date.getFullYear() == data.years[i].int) {
+                theYear = i;
+                break;
+                }
+            }
+            if (theYear == -1) return;
+            for (i = 0; i < data.years[theYear].months.length; i++) {
+                if ((calendar.date.getMonth() + 1) == data.years[theYear].months[i].int) {
+                theMonth = i;
+                break;
+                }
+            }
+            if (theMonth == -1) return;
+            for (i = 0; i < data.years[theYear].months[theMonth].days.length; i++) {
+                if (calendar.date.getDate() == data.years[theYear].months[theMonth].days[i].int) {
+                theDay = i;
+                break;
+                }
+            }
+            if (theDay == -1) return;
+            theEvents = data.years[theYear].months[theMonth].days[theDay].events;  
+            organizer.list(theEvents); //Calendar ends here
+            }
+			//function to specify date for crime markers and compare list to highlighted date
+			function seldate(){
+				var month = calendar.date.getMonth() + 1;  //collects highlighted date on calendar
+				if (month < 10)
+					month = "0" + month;
+				var day = calendar.date.getDate()
+				if (day < 10)
+					day = "0" + day;
+				var year = calendar.date.getFullYear();
+				var tes = month + "/" + day + "/" + year;
+				for(var i = 0; i < crimeData.length; i++)  
+				{
+				trimdate = crimeData[i].date; 
+				trimdate = trimdate.substr(0,trimdate.indexOf(' '));
+					if(trimdate == tes){  
+						crimeData[i].setMap(map);
+						}
+				}
+			}
+			
+			
+
+
+       
+        </script>
     <script async defer 
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places,geometry&callback=initMap">
     </script>
