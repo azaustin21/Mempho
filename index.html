@@ -347,7 +347,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
       crimeData = [];
       crimeDataShowing = false;
       crimeHeatmapShowing = false;
-      var crime_image = "yellow_pin.png";
+      var crime_image = "white_pin.png";
       currentlyShowingCrimePins = [];
       var crimesHeatmapData = [];
 	  
@@ -358,7 +358,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
     to its location.
     */
     for(var i = 0; i < crimeDataJson.crimes.length; i++)
-	{
+	  {
       var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
       crimesHeatmapData.push(latLng);
       var marker = new google.maps.Marker({
@@ -373,7 +373,10 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         title: crimeDataJson.crimes[i].date + ":" + crimeDataJson.crimes[i].type,
         clickable: true
       });
-	  
+      if(marker.type == "th" && "sa" && "ro" && "aa" && "we" && "pr" && "dr" && "ho") //Felony Markers
+        crime_image = "white_pin.png";
+      if(marker.type == "ot" && "va" && "bu" && "sh") //Misdemeanor Markers
+        crime_image = "blue_pin.png";
       marker.addListener('click', function() {
           $('#info-text').html("<h3>Individual Crime Details:" + '<br><br>' + this.name + "</h3><p>" + "Occured on " + this.date +" on the  " + this.address);
           });
@@ -386,8 +389,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           var marker_map = this.getMap();
           this.info.open(marker_map,this);
       });
-
-      crimeData.push(marker);    
+      crimeData.push(marker);
     }
 
 
@@ -505,7 +507,6 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         }
       }
 
-// Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
 			//Calendar starts here
             calendar = new Calendar("calendarContainer", "small", [ "Sunday", "3" ], [ "#303F9F", "#3949ab", "#C5CAE9", "#FFFFFF" ]);
             organizer = new Organizer("eventsContainer", calendar); 
@@ -601,11 +602,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 						}
 				}
 			}
-			
-			
-
-
-       
+// Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
         </script>
     <script async defer 
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places,geometry&callback=initMap">

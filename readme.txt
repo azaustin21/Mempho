@@ -1,7 +1,14 @@
-Merged the calendar into the index file to make interactions easier.
+Instructions on how to use our software:
 
-can click on day on calendar and then hit specify date button to bring up markers only from that date.
-Interaction with everything else is poor placing marker will bring up all other crime markers
-regardless of date in that area. 
+1) Download off Github.
+2) Run index.html in your default browser.
 
-still need to make organizer print out list of crimes.
+If you want to access the admin page please follow these instructions:
+
+1) Follow this link:
+	https://websitebeaver.com/set-up-localhost-on-macos-high-sierra-apache-mysql-and-php-7-with-sslhttps
+
+	Follow all the instructions from the beginning and stop once you hit: “Install 		MySQL”.  You will not need to install MySQL for this.
+
+2) Place the contents of the Mempho file within the Site folder you created.
+	Note, do not put the Mempho folder within the Site folder, it will not work 		otherwise.
