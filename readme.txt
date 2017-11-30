@@ -12,3 +12,5 @@ If you want to access the admin page please follow these instructions:
 
 2) Place the contents of the Mempho file within the Site folder you created.
 	Note, do not put the Mempho folder within the Site folder, it will not work 		otherwise.
+
+3) Run the index.html file or the admin.html file and you will be able to access admin features.
