@@ -145,7 +145,7 @@
 		
 	</div>
 	<div class="wrapper">
-    <div id="calendarContainer"></div>
+    <div id="calendarContainer" style="display:none"></div>
     <div id="eventsContainer" style="margin-left: 8px;"></div>
     </div>
        
@@ -611,23 +611,33 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
             }
 			//function to specify date for crime markers and compare list to highlighted date
 			function seldate(){
-				var month = calendar.date.getMonth() + 1;  //collects highlighted date on calendar
-				if (month < 10)
-					month = "0" + month;
-				var day = calendar.date.getDate()
-				if (day < 10)
-					day = "0" + day;
-				var year = calendar.date.getFullYear();
-				var tes = month + "/" + day + "/" + year;
-				for(var i = 0; i < crimeData.length; i++)  
+				var x = document.getElementById("calendarContainer");
+			    if (x.style.display === "none") {
+						x.style.display = "block";
+					}
+				else 
 				{
-				trimdate = crimeData[i].date; 
-				trimdate = trimdate.substr(0,trimdate.indexOf(' '));
-					if(trimdate == tes){  
-						crimeData[i].setMap(map);
-						}
+					var month = calendar.date.getMonth() + 1;  //collects highlighted date on calendar
+					if (month < 10)
+						month = "0" + month;
+					var day = calendar.date.getDate()
+					if (day < 10)
+						day = "0" + day;
+					var year = calendar.date.getFullYear();
+					var tes = month + "/" + day + "/" + year;
+					for(var i = 0; i < crimeData.length; i++)  
+					{
+						trimdate = crimeData[i].date; 
+						trimdate = trimdate.substr(0,trimdate.indexOf(' '));
+						if(trimdate == tes){  
+							crimeData[i].setMap(map);
+							}
+					}
+					x.style.display = "none";
 				}
 			}
+		
+
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
         </script>
     <script async defer 
