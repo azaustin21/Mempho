@@ -160,7 +160,7 @@
       var crimeHeatmapShowing;
       var currentlyShowingCrimePins;
       var attachEventToResetButton;
-	 
+	  var Rcircles = [];
 		
       var attachResetEvent = function(){
         var $resetImg = $('img[src*=mapcontrols3d6.png]');
@@ -347,7 +347,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         map.addListener('click', function(event) {
           addMarker(event.latLng);
         });
-
+		
       crimeData = [];
       crimeDataShowing = false;
       crimeHeatmapShowing = false;
@@ -441,7 +441,6 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           crimeHeatmapShowing = true;
         }
       }
-
       // Adds a marker to the map and push to the array.
       function addMarker(location){
         var marker = new google.maps.Marker({
@@ -457,10 +456,19 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
                 crimeData[i].setMap(null);
               }
            }
+		   deleteRCircles();
            });
-
-
         markers.push(marker);
+		//Will show the radius of .25 miles
+		var circle = new google.maps.Circle({
+			map: map,
+			center: location,
+			radius: 402,
+			fillColor: '#50C875'
+			});
+			
+		Rcircles.push(circle);
+			
 		//Given a distance (.25 miles), will check using for loop all crimedata points in lat/long.
 		var radius = 402;
 		for(var i = 0; i < crimeData.length; i++){
@@ -468,6 +476,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 			if (google.maps.geometry.spherical.computeDistanceBetween(location,latLng) < radius){
 				crimeData[i].setMap(map);
 			}
+		
 		}
 
     $('#info-text').html("<h3>Individual Crime Details:" + '\n' );
@@ -492,7 +501,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
               }
             }
       }
-
+	  
       // Sets the map on all markers in the array.
       function setMapOnAll(map){
         for (var i = 0; i < markers.length; i++) {
@@ -517,6 +526,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         markers = [];
 		    hideCrimeData();
 		    crimeDataShowing = false;
+		deleteRCircles();
       }
       function clearMap(){
         deleteMarkers();
@@ -532,6 +542,14 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         }
         }
       }
+	  //Deletes the circle radius
+	  function deleteRCircles(){
+		for( var i = 0; i < Rcircles.length; i++)
+			{
+			   Rcircles[i].setMap(null);
+			}
+		Rcircles = [];
+		}
 
 			//Calendar starts here
             calendar = new Calendar("calendarContainer", "small", [ "Sunday", "3" ], [ "#303F9F", "#3949ab", "#C5CAE9", "#FFFFFF" ]);
