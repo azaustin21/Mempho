@@ -105,8 +105,13 @@
         padding-left: 10px;
       }
 	   #footer{
-		float: left;  
+		float: left;
+    padding-left: 70px;  
 	  }
+
+    #eventsContainer{
+      display:none;
+    }
     .crime_info{
       font-size: .8em;
     }
@@ -120,17 +125,17 @@
     </style>
   </head>
   <body>
-	<div id="header"><h1 id="title-text">HotSpotsInMemphis</h1></div></div>
+	<div id="header"><h1 id="title-text">Hot Spots In Memphis</h1></div></div>
+    <button onclick=" window.open('login2.php')">Admin</button>
     <div id="map"></div>
     <div id="info">
     <div id="help-text"><h2>Select an area to view crime data</h2></div>
     <div id="info-text"></div>
   </div>
     <div id="footer">
-		<button onclick="toggleCrimeData()">Toggle crime data</button>
-		<button onclick="toggleCrimeHeatmap()">Toggle crime heatmap</button>
-    		<button onclick=" window.open('login2.php')"> Admin</button>
-		<button onclick="seldate()"> Specify Date</button>
+		<button onclick="toggleCrimeData()">Crime Data</button>
+		<button onclick="toggleCrimeHeatmap()">Crime Heatmap</button>
+		<button onclick="seldate()">Specify Date</button>
 	</div>
 	<div id="floating-panel">
 		<input id="pac-input" class="controls" type="text" placeholder="Type Address">
@@ -342,7 +347,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         // This event listener will call addMarker() when the map is clicked.
         map.addListener('click', function(event) {
           addMarker(event.latLng);
-        });
+            });
 
       crimeData = [];
       crimeDataShowing = false;
@@ -358,6 +363,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
     to its location.
     */
     for(var i = 0; i < crimeDataJson.crimes.length; i++)
+	{
 	  {
       var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
       crimesHeatmapData.push(latLng);
@@ -454,8 +460,6 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
               }
            }
            });
-
-
         markers.push(marker);
 		//Given a distance (.25 miles), will check using for loop all crimedata points in lat/long.
 		var radius = 402;
@@ -463,8 +467,31 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 			var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
 			if (google.maps.geometry.spherical.computeDistanceBetween(location,latLng) < radius){
 				crimeData[i].setMap(map);
+
 			}
 		}
+
+    $('#info-text').html("<h3>Individual Crime Details:" + '\n' );
+
+    //goes through and gets the information for each marker in the radius and adds it to the sidebar. 
+    for(var i = 0; i < crimeData.length; i++){
+      var t = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+       if (google.maps.geometry.spherical.computeDistanceBetween(location,t) < 402){
+          var theDiv = document.getElementById("info-text");
+          var content = document.createTextNode(crimeDataJson.crimes[i].name + '\n' + "Occured on " + crimeDataJson.crimes[i].date +" on the  " + crimeDataJson.crimes[i].address+ "\n");
+
+          var separate = document.createTextNode("-------------");
+
+          var br= document.createElement("br");
+          var br2= document.createElement("br");
+
+           theDiv.appendChild(content);
+           theDiv.appendChild(br2);
+           theDiv.appendChild(separate);
+           theDiv.appendChild(br);
+
+              }
+            }
       }
 
       // Sets the map on all markers in the array.
@@ -504,9 +531,8 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           hideCrimeData();
           crimeDataShowing = false;
         }
-        }
-      }
-
+       }
+     }
 			//Calendar starts here
             calendar = new Calendar("calendarContainer", "small", [ "Sunday", "3" ], [ "#303F9F", "#3949ab", "#C5CAE9", "#FFFFFF" ]);
             organizer = new Organizer("eventsContainer", calendar); 
@@ -547,7 +573,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
                 ]
                 }
             ]
-            };
+            }; 
             showEvents(); 
             callback = function () {
             showEvents();
@@ -555,7 +581,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
             organizer.setOnClickListener('day-slider', callback, callback);
             organizer.setOnClickListener('days-blocks', callback, null);
             organizer.setOnClickListener('month-slider', callback, callback); 
-            organizer.setOnClickListener('year-slider', callback, callback); 
+            organizer.setOnClickListener('year-slider', callback, callback);  
     
             function showEvents() {
             theYear = -1, theMonth = -1, theDay = -1;
@@ -580,9 +606,10 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
                 }
             }
             if (theDay == -1) return;
+
             theEvents = data.years[theYear].months[theMonth].days[theDay].events;  
             organizer.list(theEvents); //Calendar ends here
-            }
+            } 
 			//function to specify date for crime markers and compare list to highlighted date
 			function seldate(){
 				var month = calendar.date.getMonth() + 1;  //collects highlighted date on calendar
@@ -601,7 +628,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 						crimeData[i].setMap(map);
 						}
 				}
-			}
+			}     
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
         </script>
     <script async defer 
