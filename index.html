@@ -447,6 +447,13 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           position: location,
           map: map
         });
+        //Will show the radius of .25 miles
+    var circle = new google.maps.Circle({
+      map: map,
+      center: location,
+      radius: 402,
+      fillColor: '#50C875'
+      });
         //on double click it removes the marker and crime data around it.
         google.maps.event.addListener(marker, 'dblclick', function(event) {
            marker.setMap(null);
@@ -456,16 +463,14 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
                 crimeData[i].setMap(null);
               }
            }
-		   deleteRCircles();
+
+
+		        circle.setMap(null);
+
+
            });
         markers.push(marker);
-		//Will show the radius of .25 miles
-		var circle = new google.maps.Circle({
-			map: map,
-			center: location,
-			radius: 402,
-			fillColor: '#50C875'
-			});
+
 			
 		Rcircles.push(circle);
 			
@@ -526,7 +531,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
         markers = [];
 		    hideCrimeData();
 		    crimeDataShowing = false;
-		deleteRCircles();
+		    deleteRCircles();
       }
       function clearMap(){
         deleteMarkers();
