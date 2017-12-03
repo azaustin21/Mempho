@@ -161,7 +161,7 @@
       var currentlyShowingCrimePins;
       var attachEventToResetButton;
 	  var Rcircles = [];
-	  var SpecificDate = [];
+
       var attachResetEvent = function(){
         var $resetImg = $('img[src*=mapcontrols3d6.png]');
 
@@ -447,7 +447,6 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           position: location,
           map: map
         });
-        
         //Will show the radius of .25 miles
     var circle = new google.maps.Circle({
       map: map,
@@ -542,6 +541,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           crimeDataShowing = false;
         }
         }
+		crimeHeatmap2.setMap(null);
       }
 	  //Deletes the circle radius
 	  function deleteRCircles(){
@@ -628,17 +628,20 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
             theEvents = data.years[theYear].months[theMonth].days[theDay].events;  
             organizer.list(theEvents); //Calendar ends here
             }
-
-			
-			//function to specify date for crime markers and heatmap and compare list to highlighted date
+      
+			//function to specify date for crime markers and compare list to highlighted date
 			var specdateflag = false;
 			var SpecificDate = [];
-      
 			function seldate(){
 				var x = document.getElementById("calendarContainer");
 			    if (x.style.display === "none") {
-						x.style.display = "block";
+						x.style.display = "block";  //shows calendar
 					}
+				if (specdateflag == true) {  //checks if there is already a heatmap running and erases any that are running
+					crimeHeatmap2.setMap(null);
+					specdateflag = false;
+					SpecificDate.length = 0;
+				}
 				else 
 				{
 					var month = calendar.date.getMonth() + 1;  //collects highlighted date on calendar
@@ -654,11 +657,20 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 					{
 						trimdate = crimeData[i].date; 
 						trimdate = trimdate.substr(0,trimdate.indexOf(' '));
-						if(trimdate == tes){  
-							crimeData[i].setMap(map);
+
+						if(trimdate == tes){  //compares highlighted date with date associated with specific crime
+							crimeData[i].setMap(map); //sets date specific crime pin
+							SpecificDate[i] = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs); 	// pulls location for highlighted date
 							}
 					}
-					x.style.display = "none";
+					crimeHeatmap2 = new google.maps.visualization.HeatmapLayer({  //creates new heatmap for specific date
+					data: SpecificDate,
+					dissipating: true,
+					map: null
+					});
+					crimeHeatmap2.setMap(map);  //displays new heatmap
+					specdateflag = true;
+					x.style.display = "none"; //hides calendar again once date is selected
 				}
 			}
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
