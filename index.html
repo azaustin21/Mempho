@@ -161,7 +161,7 @@
       var currentlyShowingCrimePins;
       var attachEventToResetButton;
 	  var Rcircles = [];
-		
+	  var SpecificDate = [];
       var attachResetEvent = function(){
         var $resetImg = $('img[src*=mapcontrols3d6.png]');
 
@@ -447,6 +447,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
           position: location,
           map: map
         });
+        
         //Will show the radius of .25 miles
     var circle = new google.maps.Circle({
       map: map,
@@ -463,14 +464,9 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
                 crimeData[i].setMap(null);
               }
            }
-
-
 		        circle.setMap(null);
-
-
            });
         markers.push(marker);
-
 			
 		Rcircles.push(circle);
 			
@@ -632,7 +628,12 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
             theEvents = data.years[theYear].months[theMonth].days[theDay].events;  
             organizer.list(theEvents); //Calendar ends here
             }
-			//function to specify date for crime markers and compare list to highlighted date
+
+			
+			//function to specify date for crime markers and heatmap and compare list to highlighted date
+			var specdateflag = false;
+			var SpecificDate = [];
+      
 			function seldate(){
 				var x = document.getElementById("calendarContainer");
 			    if (x.style.display === "none") {
@@ -648,6 +649,7 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 						day = "0" + day;
 					var year = calendar.date.getFullYear();
 					var tes = month + "/" + day + "/" + year;
+
 					for(var i = 0; i < crimeData.length; i++)  
 					{
 						trimdate = crimeData[i].date; 
@@ -659,8 +661,6 @@ attachEventToResetButton = window.setInterval(attachResetEvent, 500);
 					x.style.display = "none";
 				}
 			}
-		
-
 // Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
         </script>
     <script async defer 
