@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>HotSpotsInMemphis</title>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+  <script type="text/javascript" language="javascript" src="crime_data_clean.json"></script>
+  	   <script src="library.js"></script>
+          <link href="stylesheet.css" rel="stylesheet">
+		  
+  <style>
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+		}
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #header{
+		height: 5%;
+		width: 70%;  
+	  }  
+	  #map #infowindow-content {
+        display: inline;
+      }
+
+      .pac-card {
+        margin: 10px 10px 0 0;
+        border-radius: 2px 0 0 2px;
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        outline: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        background-color: #fff;
+        font-family: Roboto;
+      }
+
+      #pac-container {
+        padding-bottom: 12px;
+        margin-right: 12px;
+      }
+
+      .pac-controls {
+        display: inline-block;
+        padding: 5px 11px;
+      }
+
+      .pac-controls label {
+        font-family: Roboto;
+        font-size: 13px;
+        font-weight: 300;
+      }
+
+      #pac-input {
+        background-color: #fff;
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+        margin-left: 12px;
+        padding: 0 11px 0 13px;
+        text-overflow: ellipsis;
+        width: 400px;
+      }
+
+      #pac-input:focus {
+        border-color: #4d90fe;
+      }
+	    #map {
+        height: 75%;
+        width: 70%;
+        float: left;
+        margin: 2%;
+      }
+      #info {
+        height: 75%;
+        width: 20%;
+        float: left;
+      }
+      #title-text{
+		  text-align: center;
+		  color: #FFDF00;
+	    }
+      #info-text{
+        color: #FFFFFF;
+        padding-left: 1em;
+      }
+      #help-text{
+        color: #FFDF00;
+        padding-top: 15%;
+        padding-left: 1em;
+      }
+	  #target {
+        width: 345px;
+      }
+	  #floating-panel {
+        position: absolute;
+        top: 120px;
+        left: 17%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+	   #footer{
+		float: left;  
+    padding-left:70px;
+	  }
+    #eventsContainer{
+      display:none;
+    }
+    .crime_info{
+      font-size: .8em;
+    }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        background: #172697;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+	<div id="header"><h1 id="title-text">Hot Spots In Memphis</h1></div></div>
+    <button onclick=" window.open('login2.php')"> Admin</button>
+    <div id="map"></div>
+    <div id="info">
+    <div id="help-text"><h2>Select an area to view crime data</h2></div>
+    <div id="info-text"></div>
+  </div>
+    <div id="footer">
+		<button onclick="toggleCrimeData()">Crime Data</button>
+		<button onclick="toggleCrimeHeatmap()">Crime Heatmap</button>
+		<button onclick="seldate()"> Specify Date</button>
+	</div>
+	<div id="floating-panel">
+		<input id="pac-input" class="controls" type="text" placeholder="Type Address">
+		<input onclick="clearMarkers();" type=button value="Hide Markers">
+      	<input onclick="showMarkers();" type=button value="Show All Markers">
+      	<input onclick="deleteMarkers();" type=button value="Delete Markers">
+        <input onclick="clearMap();" type=button value="Reset Map">
+		
+	</div>
+	<div class="wrapper">
+    <div id="calendarContainer" style="display:none"></div>
+    <div id="eventsContainer" style="margin-left: 8px;"></div>
+    </div>
+       
+    <script>
+    	var map;
+      var markers = [];
+	    var input;
+	    var searchBox;
+      var crimeData;
+      var crimeDataShowing;
+      var crimeHeatmap;
+      var crimeHeatmapShowing;
+      var currentlyShowingCrimePins;
+      var attachEventToResetButton;
+	  var Rcircles = [];
+      var attachResetEvent = function(){
+        var $resetImg = $('img[src*=mapcontrols3d6.png]');
+
+          if ($resetImg.length > 0)
+          {
+            $resetImg.css('cursor', 'pointer').attr('title', 'Return to center').click(function(){
+              alert('Clicked on reset button');
+
+            // Put your code to reset the map here. For example:
+            //map.setMapTypeId(MAP_TYPE_ID);
+            //map.setCenter(new google.maps.LatLng(LAT, LNG));
+            //map.setZoom(ZOOM_LEVEL);
+          });
+      window.clearInterval(attachEventToResetButton);
+    }
+  }
+// Periodically checking to attach event to the reset button
+attachEventToResetButton = window.setInterval(attachResetEvent, 500);
+
+      function initMap() {
+        var memphis = {lat: 35.139784, lng: -89.991499};
+
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: memphis,
+          mapTypeId: 'terrain',
+          streetViewControl: false
+        });
+
+        //restricts the zoom funtion of the Google Maps API
+        google.maps.event.addListener(map, 'zoom_changed', function (){
+        if (map.getZoom() < 12) map.setZoom(12);});
+
+
+          //sets the bounds of the map
+      maxBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(34.99, -90.315),
+        new google.maps.LatLng(35.32, -89.64)
+        );
+
+
+        //next few lines determines if the user has hit the boundry or not and stops the user from moving further if they have.
+        var MapBoundsLimit = function(mapInstance, maxBounds) {
+          this.mapInstance_ = mapInstance;
+          this.maxBounds_ = maxBounds;
+
+          google.maps.event.addListener(map, 'center_changed', this.limitedMapMove_.bind(this));
+          google.maps.event.addListener(map, 'zoom_changed', this.maybeUpdateMapCenter_.bind(this));
+          google.maps.event.addListener(map, 'resize', this.maybeUpdateMapCenter_.bind(this));
+        };
+
+        MapBoundsLimit.prototype.limitedMapMove_ = function() {
+          var visibleBounds = null;
+
+        if (this.ignoreNextMapMove_) {
+          this.ignoreNextMapMove_ = false;
+          return;
+        }
+
+        visibleBounds = this.mapInstance_.getBounds();
+
+        if (
+          this.maxBounds_.contains(visibleBounds.getNorthEast()) &&
+          this.maxBounds_.contains(visibleBounds.getSouthWest())
+          ) {
+          this.lastValidCenter_ = this.mapInstance_.getCenter();
+        return;
+        }
+
+        this.ignoreNextMapMove_ = true;
+
+        if (this.lastValidCenter_) {
+          this.mapInstance_.setCenter(this.lastValidCenter_);
+          return;
+        }
+
+        this.lastValidCenter_ = this.recalculateMapCenter_();
+        this.mapInstance_.setCenter(this.lastValidCenter_);
+        };
+
+        MapBoundsLimit.prototype.recalculateMapCenter_ = function() {
+          var mapCenter = this.mapInstance_.getCenter();
+          var mapBounds = this.mapInstance_.getBounds();
+          var offsets = this.getBoundsOffsets_(mapBounds, this.maxBounds_);
+          var newCenter = {
+            'lat': mapCenter.lat(),
+            'lng': mapCenter.lng()
+          };
+
+          if (offsets.n > 0) {
+            newCenter.lat = mapCenter.lat() - offsets.n;
+          }
+
+          if (offsets.e > 0) {
+            newCenter.lng = mapCenter.lng() - offsets.e;
+          }
+
+          if (offsets.s > 0) {
+            newCenter.lat = mapCenter.lat() + offsets.s;
+          }
+
+          if (offsets.w > 0) {
+            newCenter.lng = mapCenter.lng() + offsets.w;
+          }
+
+          return new google.maps.LatLng(newCenter.lat, newCenter.lng);
+        };
+
+        MapBoundsLimit.prototype.getBoundsOffsets_ = function(inner, outer) {
+          return {
+            'n': inner.getNorthEast().lat() - outer.getNorthEast().lat(),
+            'e': inner.getNorthEast().lng() - outer.getNorthEast().lng(),
+            's': outer.getSouthWest().lat() - inner.getSouthWest().lat(),
+            'w': outer.getSouthWest().lng() - inner.getSouthWest().lng()
+          };
+        };
+
+        MapBoundsLimit.prototype.maybeUpdateMapCenter_ = function() {
+          if (!this.mapInstance_.getBounds()) {
+            return;
+          }
+
+        setTimeout(function() {
+          this.lastValidCenter_ = this.recalculateMapCenter_();
+          this.mapInstance_.setCenter(this.lastValidCenter_);
+        }.bind(this), 0);
+      };
+
+        new MapBoundsLimit(map, maxBounds);
+        
+    //Creates the searchbox UI
+        input = document.getElementById('pac-input');
+          searchBox = new google.maps.places.SearchBox(input);
+          map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+    //checks to see if searched area has different bounds
+        map.addListener('bounds_changed', function() {
+          searchBox.setBounds(map.getBounds());
+        });
+    //Listens for when the user makes a search.
+        searchBox.addListener('places_changed', function() {
+          var places = searchBox.getPlaces();
+
+          if (places.length == 0) {
+            return;
+          }
+
+          //For each place, get the icon, name and location.
+          var bounds = new google.maps.LatLngBounds(
+		   new google.maps.LatLng(34.99, -90.315),
+           new google.maps.LatLng(35.265, -89.64)
+		  );
+		  var options = {
+			bounds: bounds,
+			types: ['geocode'],
+			componentRestrictions: {country: 'us'}
+			};
+          places.forEach(function(place) {
+            if (!place.geometry) {
+              console.log("Returned place contains no geometry");
+              return;
+            }
+            var icon = {
+              url: place.icon,
+              size: new google.maps.Size(71, 71),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(17, 34),
+              scaledSize: new google.maps.Size(25, 25)
+            };
+
+            //Create the marker for searched place.
+              addMarker(place.geometry.location);
+            if (place.geometry.viewport) {
+              // Only geocodes have viewport.
+              bounds.union(place.geometry.viewport);
+            } else {
+              bounds.extend(place.geometry.location);
+            }
+          });
+          map.fitBounds(bounds);
+        });
+
+        // This event listener will call addMarker() when the map is clicked.
+        map.addListener('click', function(event) {
+          addMarker(event.latLng);
+        });
+		
+      crimeData = [];
+      crimeDataShowing = false;
+      crimeHeatmapShowing = false;
+      var crime_image = "white_pin.png";
+      currentlyShowingCrimePins = [];
+      var crimesHeatmapData = [];
+	  
+
+    /*
+    For loop goes into the crime_data_clean.json file and
+    retrieves the information, it also places it on the map according
+    to its location.
+    */
+    for(var i = 0; i < crimeDataJson.crimes.length; i++)
+	  {
+      var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+      crimesHeatmapData.push(latLng);
+      var marker = new google.maps.Marker({
+        position: latLng, 
+        map: null,
+        zIndex: 1,
+        icon: crime_image,
+        date: crimeDataJson.crimes[i].date,
+        type: crimeDataJson.crimes[i].type,
+        name: crimeDataJson.crimes[i].name,
+        address: crimeDataJson.crimes[i].address,
+        title: crimeDataJson.crimes[i].date + ":" + crimeDataJson.crimes[i].type,
+        clickable: true
+      });
+      if(marker.type == "th" && "sa" && "ro" && "aa" && "we" && "pr" && "dr" && "ho") //Felony Markers
+        crime_image = "red_pin.png";
+      if(marker.type == "ot" && "va" && "bu" && "sh") //Misdemeanor Markers
+        crime_image = "blue_pin.png";
+      /*marker.addListener('click', function() {
+          $('#info-text').html("<h3>Individual Crime Details:" + '<br><br>' + this.name + "</h3><p>" + "Occured on " + this.date +" on the  " + this.address);
+          });*/
+
+       marker.info = new google.maps.InfoWindow({
+         content: marker.name +'<br><br>'+ marker.date
+        });
+
+      google.maps.event.addListener(marker, 'dblclick', function() {
+          var marker_map = this.getMap();
+          this.info.open(marker_map,this);
+      });
+      crimeData.push(marker);
+    }
+
+
+    // Visualizer that sets the crime locations as heat points.
+    crimeHeatmap = new google.maps.visualization.HeatmapLayer({
+      data: crimesHeatmapData,
+      dissipating: true,
+      map: null
+    });
+  }
+      function toggleCrimeData(){
+        if(crimeDataShowing){
+          deleteMarkers();
+          hideCrimeData();
+          crimeDataShowing = false;
+        }
+        else 
+        {
+          deleteMarkers();
+          showCrimeData();
+          crimeDataShowing = true;
+        }
+      }
+
+      function showCrimeData() {
+        for(var i = 0; i < crimeData.length; i++){
+          crimeData[i].setMap(map);
+        }
+      }
+
+      function hideCrimeData() {
+        for(var i = 0; i < crimeData.length; i++){
+          crimeData[i].setMap(null);
+        }
+      }
+
+      // Turns the heat map on and off, used by the Toggle crime heatmap
+      function toggleCrimeHeatmap(){
+        if(crimeHeatmapShowing){
+          crimeHeatmap.setMap(null);
+          crimeHeatmapShowing = false;
+        }
+        else {
+          crimeHeatmap.setMap(map);
+          crimeHeatmapShowing = true;
+        }
+      }
+      // Adds a marker to the map and push to the array.
+      function addMarker(location){
+        var marker = new google.maps.Marker({
+          position: location,
+          map: map
+        });
+        //Will show the radius of .25 miles
+    var circle = new google.maps.Circle({
+      map: map,
+      center: location,
+      radius: 402,
+      fillColor: '#50C875'
+      });
+        //on double click it removes the marker and crime data around it.
+        google.maps.event.addListener(marker, 'dblclick', function(event) {
+           marker.setMap(null);
+           for(var i=0; i<crimeData.length; i++){
+              var range = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+              if (google.maps.geometry.spherical.computeDistanceBetween(marker.position,range) < 402){
+                crimeData[i].setMap(null);
+              }
+           }
+		        circle.setMap(null);
+           });
+        markers.push(marker);
+			
+		Rcircles.push(circle);
+			
+		//Given a distance (.25 miles), will check using for loop all crimedata points in lat/long.
+		var radius = 402;
+		for(var i = 0; i < crimeData.length; i++){
+			var latLng = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+			if (google.maps.geometry.spherical.computeDistanceBetween(location,latLng) < radius){
+				crimeData[i].setMap(map);
+			}
+		
+		}
+
+    $('#info-text').html("<h3>Individual Crime Details:" + '\n' );
+
+    //goes through and gets the information for each marker in the radius and adds it to the sidebar. 
+    for(var i = 0; i < crimeData.length; i++){
+      var t = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs);
+       if (google.maps.geometry.spherical.computeDistanceBetween(location,t) < 402){
+          var theDiv = document.getElementById("info-text");
+          var content = document.createTextNode(crimeDataJson.crimes[i].name + '\n' + "Occured on " + crimeDataJson.crimes[i].date +" on the  " + crimeDataJson.crimes[i].address+ "\n");
+
+          var separate = document.createTextNode("-------------");
+
+          var br= document.createElement("br");
+          var br2= document.createElement("br");
+
+           theDiv.appendChild(content);
+           theDiv.appendChild(br2);
+           theDiv.appendChild(separate);
+           theDiv.appendChild(br);
+
+              }
+            }
+      }
+	  
+      // Sets the map on all markers in the array.
+      function setMapOnAll(map){
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+        }
+      }
+
+      // Removes the markers from the map, but keeps them in the array.
+      function clearMarkers(){
+        setMapOnAll(null);
+      }
+
+      // Shows any markers currently in the array.
+      function showMarkers(){
+        setMapOnAll(map);
+      }
+
+
+      // Deletes all markers in the array by removing references to them. Also hides all currently visible crime data.
+      function deleteMarkers(){
+        clearMarkers();
+        markers = [];
+		    hideCrimeData();
+		    crimeDataShowing = false;
+		    deleteRCircles();
+      }
+      function clearMap(){
+        deleteMarkers();
+        map.setMapTypeId('terrain');
+        map.setCenter(new google.maps.LatLng(35.139784, -89.991499));
+        map.setZoom(12);
+        if(crimeHeatmapShowing){
+          crimeHeatmap.setMap(null);
+          crimeHeatmapShowing = false;
+        if(crimeDataShowing){
+          hideCrimeData();
+          crimeDataShowing = false;
+        }
+        }
+		crimeHeatmap2.setMap(null);
+      }
+	  //Deletes the circle radius
+	  function deleteRCircles(){
+		for( var i = 0; i < Rcircles.length; i++)
+			{
+			   Rcircles[i].setMap(null);
+			}
+		Rcircles = [];
+		}
+
+			//Calendar starts here
+            calendar = new Calendar("calendarContainer", "small", [ "Sunday", "3" ], [ "#303F9F", "#3949ab", "#C5CAE9", "#FFFFFF" ]);
+            organizer = new Organizer("eventsContainer", calendar); 
+            currentDay = calendar.date.getDate(); 
+            
+            data = {
+            years: [
+                {
+                int: 2000,
+                months: [
+                    {
+                    int: 1,
+                    days: [
+                        {
+                        int: 1,
+                        events: [
+
+                        ]
+                        }
+                    ]
+                    }
+                ]
+                },
+                {
+                int: (new Date().getFullYear()),
+                months: [
+                    {
+                    int: (new Date().getMonth() + 1),
+                    days: [
+                        {
+                        int: (new Date().getDate()),
+                        events: [
+
+                        ]
+                        }
+                    ]
+                    }
+                ]
+                }
+            ]
+            };
+            showEvents(); 
+            callback = function () {
+            showEvents();
+            }
+            organizer.setOnClickListener('day-slider', callback, callback);
+            organizer.setOnClickListener('days-blocks', callback, null);
+            organizer.setOnClickListener('month-slider', callback, callback); 
+            organizer.setOnClickListener('year-slider', callback, callback); 
+    
+            function showEvents() {
+            theYear = -1, theMonth = -1, theDay = -1;
+            for (i = 0; i < data.years.length; i++) {
+                if (calendar.date.getFullYear() == data.years[i].int) {
+                theYear = i;
+                break;
+                }
+            }
+            if (theYear == -1) return;
+            for (i = 0; i < data.years[theYear].months.length; i++) {
+                if ((calendar.date.getMonth() + 1) == data.years[theYear].months[i].int) {
+                theMonth = i;
+                break;
+                }
+            }
+            if (theMonth == -1) return;
+            for (i = 0; i < data.years[theYear].months[theMonth].days.length; i++) {
+                if (calendar.date.getDate() == data.years[theYear].months[theMonth].days[i].int) {
+                theDay = i;
+                break;
+                }
+            }
+            if (theDay == -1) return;
+            theEvents = data.years[theYear].months[theMonth].days[theDay].events;  
+            organizer.list(theEvents); //Calendar ends here
+            }
+			//function to specify date for crime markers and compare list to highlighted date
+			var specdateflag = false;
+			var SpecificDate = [];
+			function seldate(){
+				var x = document.getElementById("calendarContainer");
+			    if (x.style.display === "none") {
+						x.style.display = "block";  //shows calendar
+					}
+				if (specdateflag == true) {  //checks if there is already a heatmap running and erases any that are running
+					crimeHeatmap2.setMap(null);
+					specdateflag = false;
+					SpecificDate.length = 0;
+				}
+				else 
+				{
+					var month = calendar.date.getMonth() + 1;  //collects highlighted date on calendar
+					if (month < 10)
+						month = "0" + month;
+					var day = calendar.date.getDate()
+					if (day < 10)
+						day = "0" + day;
+					var year = calendar.date.getFullYear();
+					var tes = month + "/" + day + "/" + year;
+          
+					for(var i = 0; i < crimeData.length; i++)  
+					{
+						trimdate = crimeData[i].date; 
+						trimdate = trimdate.substr(0,trimdate.indexOf(' '));
+
+						if(trimdate == tes){  //compares highlighted date with date associated with specific crime
+							crimeData[i].setMap(map); //sets date specific crime pin
+							SpecificDate[i] = new google.maps.LatLng(crimeDataJson.crimes[i].lats, crimeDataJson.crimes[i].longs); 	// pulls location for highlighted date
+							}
+					}
+					crimeHeatmap2 = new google.maps.visualization.HeatmapLayer({  //creates new heatmap for specific date
+					data: SpecificDate,
+					dissipating: true,
+					map: null
+					});
+					crimeHeatmap2.setMap(map);  //displays new heatmap
+					specdateflag = true;
+					x.style.display = "none"; //hides calendar again once date is selected
+				}
+			}
+// Google API Key: AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0
+        </script>
+    <script async defer 
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7Y-4-A5Hc-YlTJLbzT5RcPZssHNCnXi0&libraries=visualization,places,geometry&callback=initMap">
+    </script>
+  </body>
+</html>

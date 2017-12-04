@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang= "en">
+  <head>
+    <meta charset="UTF-8">
+  <title>Admin Page</title>
+<style>
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+		}
+      #header{
+		height: 5%;
+		width: 70%;  
+	  }  
+      #title-text{
+		  text-align: center;
+		  color: #FFDF00;
+	    }
+      html, body {
+        background: #172697;
+        height: 100%;
+        margin: 0;
+        text-align: center;
+        color:#FFDF00;
+        padding: 0;
+    </style>
+  </head>
+  
+  <body>
+  <form action="upload.php" method="post" enctype="multipart/form-data">
+    Select file to upload:
+    <input type="file" name="file" id="fileToUpload">
+    <input type="submit" name="submit" value="Upload File Now">
+</form>
+  </body>
+
+  </html>
+
