@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang= "en">
   <head>
+    <meta charset="UTF-8">
   <title>Admin Page</title>
 <style>
 		body {
@@ -14,17 +15,22 @@
 		  text-align: center;
 		  color: #FFDF00;
 	    }
-
       html, body {
         background: #172697;
         height: 100%;
         margin: 0;
+        text-align: center;
+        color:#FFDF00;
         padding: 0;
     </style>
   </head>
   
   <body>
-      <button class= button button1 onclick="">Update Database</button>
+  <form action="upload.php" method="post" enctype="multipart/form-data">
+    Select file to upload:
+    <input type="file" name="file" id="fileToUpload">
+    <input type="submit" name="submit" value="Upload File Now">
+</form>
   </body>
 
   </html>
